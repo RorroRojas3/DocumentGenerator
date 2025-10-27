@@ -23,7 +23,7 @@
 </ItemGroup>
 
 <ItemGroup>
-  <ProjectReference Include="..\RR.DocumentGenerator.Service\RR.DocumentGenerator.Service.csproj" />
+  <ProjectReference Include="..\RR.DocumentGenerator.Service\RR.DocumentGenerator.Tool.csproj" />
 </ItemGroup>
 
 </Project>

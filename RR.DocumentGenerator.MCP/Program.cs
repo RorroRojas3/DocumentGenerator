@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
+using RR.DocumentGenerator.Tool;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,6 +31,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services
     .AddMcpServer()
     .WithToolsFromAssembly()
+    .WithTools<PolicyTool>()
     .WithHttpTransport();
 
 var app = builder.Build();
