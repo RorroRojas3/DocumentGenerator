@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="RR.DocumentGenerator.Dto/RR.DocumentGenerator.Dto.csproj" />
+  <Project Path="RR.DocumentGenerator.MCP/RR.DocumentGenerator.MCP.csproj" />
+  <Project Path="RR.DocumentGenerator.Service/RR.DocumentGenerator.Service.csproj" />
+</Solution>
