@@ -8,6 +8,7 @@ using QuestPDF.Previewer;
 using RR.DocumentGenerator.Dto;
 using RR.DocumentGenerator.Dto.Actions;
 using System.ComponentModel;
+using System.Text.Json;
 using IContainer = QuestPDF.Infrastructure.IContainer;
 
 namespace RR.DocumentGenerator.Tool
@@ -20,7 +21,7 @@ namespace RR.DocumentGenerator.Tool
         [McpServerTool, Description("Creates a professional Certificate of Insurance PDF document containing " +
             "policy details, carrier information, producer details, and insured company information. Returns a formatted PDF file " +
             "with proper headers, sections, and footer disclaimers suitable for official insurance documentation.")]
-        public async Task<FileDto> GenerateAsync([Description("Complete policy information including policy numbers," +
+        public async Task<string> GenerateAsync([Description("Complete policy information including policy numbers," +
             " effective dates, carrier details (name, address, email), producer information (name, address, email), " +
             "and insured company details (name, address, phone). All fields are required to generate " +
             "a valid certificate of insurance.")] CreatePolicyActionDto request)
@@ -49,23 +50,20 @@ namespace RR.DocumentGenerator.Tool
                 });
             });
 
-
-            #if DEBUG
-            await document.ShowInCompanionAsync();
-            #endif
-
             var pdfBytes = document.GeneratePdf();
 
             _logger.LogInformation("Successfully generated PDF for Policy Number: {PolicyNumber}, Size: {Size} bytes", 
                 request.PolicyNumber, pdfBytes.Length);
 
-            return new FileDto
+            var dto = new FileDto
             {
-                Name = $"Policy_{request.PolicyNumber}_{DateTime.UtcNow:yyyyMMdd}.pdf",
-                Content = pdfBytes,
+                Name = $"Certificate_of_Insurance_{request.PolicyNumber}.pdf",
+                Base64 = Convert.ToBase64String(pdfBytes),
                 ContentType = "application/pdf",
                 Size = pdfBytes.Length
             };
+
+            return JsonSerializer.Serialize(dto);
         }
 
         private void ComposeHeader(IContainer container)
