@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Azure.Storage.Sas;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using QuestPDF.Companion;
 using QuestPDF.Fluent;
@@ -7,6 +9,7 @@ using QuestPDF.Infrastructure;
 using QuestPDF.Previewer;
 using RR.DocumentGenerator.Dto;
 using RR.DocumentGenerator.Dto.Actions;
+using RR.DocumentGenerator.Service;
 using System.ComponentModel;
 using System.Text.Json;
 using IContainer = QuestPDF.Infrastructure.IContainer;
@@ -14,14 +17,20 @@ using IContainer = QuestPDF.Infrastructure.IContainer;
 namespace RR.DocumentGenerator.Tool
 {
     [McpServerToolType]
-    public sealed class PolicyTool(ILogger<PolicyTool> logger)
+    public sealed class PolicyTool(ILogger<PolicyTool> logger, 
+        ITokenService tokenService,
+        IBlobStorageService blobStorageService,
+        IConfiguration configuration)
     {
         private readonly ILogger<PolicyTool> _logger = logger;
+        private readonly ITokenService _tokenService = tokenService;
+        private readonly IBlobStorageService _blobStorageService = blobStorageService;
+        private readonly IConfiguration _configuration = configuration;
 
         [McpServerTool, Description("Creates a professional Certificate of Insurance PDF document containing " +
             "policy details, carrier information, producer details, and insured company information. Returns a formatted PDF file " +
             "with proper headers, sections, and footer disclaimers suitable for official insurance documentation.")]
-        public async Task<string> GenerateAsync([Description("Complete policy information including policy numbers," +
+        public async Task<Uri> GenerateAsync([Description("Complete policy information including policy numbers," +
             " effective dates, carrier details (name, address, email), producer information (name, address, email), " +
             "and insured company details (name, address, phone). All fields are required to generate " +
             "a valid certificate of insurance.")] CreatePolicyActionDto request)
@@ -50,20 +59,29 @@ namespace RR.DocumentGenerator.Tool
                 });
             });
 
-            var pdfBytes = document.GeneratePdf();
+            var bytes = document.GeneratePdf();
 
             _logger.LogInformation("Successfully generated PDF for Policy Number: {PolicyNumber}, Size: {Size} bytes", 
-                request.PolicyNumber, pdfBytes.Length);
+                request.PolicyNumber, bytes.Length);
 
-            var dto = new FileDto
+            var oid = _tokenService.GetOid();
+            var fileName = $"Certificate_of_Insurance_{request.PolicyNumber}_{oid}_{DateTime.UtcNow.ToString("yyyyMMdd_HHmmss")}.pdf";
+            var contentType = "application/pdf";
+            var length = bytes.Length;
+
+            var metadata = new Dictionary<string, string>
             {
-                Name = $"Certificate_of_Insurance_{request.PolicyNumber}.pdf",
-                Base64 = Convert.ToBase64String(pdfBytes),
-                ContentType = "application/pdf",
-                Size = pdfBytes.Length
+                { "userId", oid.Value!.ToString() }
             };
 
-            return JsonSerializer.Serialize(dto);
+            var container = _configuration["AzureStorage:TemporaryContainer"] ?? "temporary";
+
+            await _blobStorageService.UploadAsync(container, fileName, bytes, metadata, CancellationToken.None);
+
+            var sasUri = _blobStorageService.GenerateSasUri(container, fileName, TimeSpan.FromHours(1), 
+                            BlobSasPermissions.Read);
+
+            return sasUri;
         }
 
         private void ComposeHeader(IContainer container)

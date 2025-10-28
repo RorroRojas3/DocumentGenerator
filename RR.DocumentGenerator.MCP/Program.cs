@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Azure.Storage.Blobs;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Identity.Web;
 using QuestPDF.Infrastructure;
+using RR.DocumentGenerator.Service;
 using RR.DocumentGenerator.Tool;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -26,6 +28,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddHttpContextAccessor();
+
+// Azure services
+// Azure Storage
+builder.Services.AddSingleton(x =>
+{
+    var connectionString = builder.Configuration["AzureStorage:ConnectionString"];
+    return new BlobServiceClient(connectionString);
+});
+
+// Services Configuration
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IBlobStorageService, BlobStorageService>();
 
 // MCP Server Configuration
 builder.Services
