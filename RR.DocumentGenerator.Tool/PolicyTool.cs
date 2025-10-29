@@ -2,16 +2,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
-using QuestPDF.Companion;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
-using QuestPDF.Previewer;
-using RR.DocumentGenerator.Dto;
 using RR.DocumentGenerator.Dto.Actions;
 using RR.DocumentGenerator.Service;
 using System.ComponentModel;
-using System.Text.Json;
 using IContainer = QuestPDF.Infrastructure.IContainer;
 
 namespace RR.DocumentGenerator.Tool
